@@ -5,6 +5,7 @@
 
 <script>
 // import HelloWorld from './components/HelloWorld.vue'
+import axios from 'axios';
 import TaskNew from './components/Task.vue'
 export default {
   name: 'App',
@@ -15,26 +16,18 @@ export default {
     return{
       msg: "Hello Kumkum!", 
       tasks: [
-      {
-        id:1,
-        title: "Task 1",
-        priority: true,
-        completed: false,
-      },
-      {
-        id:2,
-        title: "Task 2",
-        priority: true,
-        completed: false,
-      },
-      { id:3,
-        title: "Task 3",
-        priority: false,
-        completed: false,
-      }
     ]
     }
     
+  },
+  created() {
+    axios.get('http://127.0.0.1:8000/tasks/')
+      .then(response => {
+        this.tasks = response.data;
+      })
+      .catch(error => {
+        console.error(error);
+      });
   }
 }
 </script>

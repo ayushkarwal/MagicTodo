@@ -25,8 +25,19 @@ class UserView(viewsets.ViewSet):
     def log_in(self, request):
         user_name = request.data.get("username")
         password = request.data.get("password")
-        user = authenticate(username= user_name, password=password)
-        if user:
+        user_match, pass_match = self.authenticate_user(username= user_name, password=password)
+        if user_match and pass_match:
             return Response("User is authenticated", status=200)
+        elif user_match:
+            return Response("Wrong password", status=400)
         else:
             return Response("User is not found", status=404)
+    
+    def authenticate_user(self, username, password):
+        user_match, pass_match = False, False
+        try:
+            user = User.objects.get(username = username)
+            user_match = True
+            return (user_match, True) if user.password == password else (user_match, False)
+        except User.DoesNotExist:
+            return (user_match, pass_match)
