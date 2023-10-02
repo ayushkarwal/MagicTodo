@@ -40,4 +40,3 @@ class TaskViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data, status=200)
 
-

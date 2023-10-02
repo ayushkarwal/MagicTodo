@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework import viewsets
 from django.contrib.auth import authenticate
+from task.models import Task
+from task.serializers import TaskSerializer
 
 
 class UserView(viewsets.ViewSet):
@@ -23,15 +25,28 @@ class UserView(viewsets.ViewSet):
     
     @action(detail=False, methods=['post'])
     def log_in(self, request):
+        result = {"status":True, "msg": ""}
         user_name = request.data.get("username")
         password = request.data.get("password")
         user_match, pass_match = self.authenticate_user(username= user_name, password=password)
         if user_match and pass_match:
-            return Response("User is authenticated", status=200)
+            result["msg"] = "User is authenticated"
+            try:
+                user = User.objects.get(username=user_name, password=password)
+                user_serializer = UserSerializer(user)
+            except User.DoesNotExist:
+                result["status"] = False
+                result["msg"] = "User is not found"
+                return Response(result, status=404)
+            return Response(user_serializer.data, status=200)
         elif user_match:
-            return Response("Wrong password", status=400)
+            result["status"] = False
+            result["msg"] = "Wrong password"
+            return Response(result, status=400)
         else:
-            return Response("User is not found", status=404)
+            result["status"] = False
+            result["msg"] = "User is not found"
+            return Response(result, status=404)
     
     def authenticate_user(self, username, password):
         user_match, pass_match = False, False
@@ -41,3 +56,9 @@ class UserView(viewsets.ViewSet):
             return (user_match, True) if user.password == password else (user_match, False)
         except User.DoesNotExist:
             return (user_match, pass_match)
+    
+    @action(detail=True, methods=["GET"])
+    def get_tasks(self, request, pk=None):
+        query_set = Task.objects.filter(created_by = pk).order_by('completed_on')
+        serializer = TaskSerializer(query_set, many=True)
+        return Response(serializer.data)
